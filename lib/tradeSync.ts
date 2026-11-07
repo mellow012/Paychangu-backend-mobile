@@ -38,6 +38,8 @@ export async function markFundsLocked(
 
   batch.update(tradeRef, {
     txHash: reference,
+    // Starts the clock for the auto-refund / auto-release automation rules
+    paidAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   });
 
