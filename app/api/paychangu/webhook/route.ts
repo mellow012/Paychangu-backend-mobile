@@ -22,6 +22,23 @@ import { markFundsLocked } from "@/lib/tradeSync";
  * from what's expected, check the console.log below — the field to adjust
  * is `candidateTxRef`.
  */
+/**
+ * GET /api/paychangu/webhook
+ *
+ * PayChangu redirects the buyer's BROWSER to callback_url (a GET with
+ * ?tx_ref=...) after checkout, in addition to any POST webhook. Without this
+ * handler that redirect returned 405 and the payment was never recorded.
+ * We hand off to the return page, which verifies the payment and locks funds.
+ */
+export async function GET(req: NextRequest) {
+  const txRef = req.nextUrl.searchParams.get("tx_ref");
+  const status = req.nextUrl.searchParams.get("status");
+  const dest = new URL("/checkout/complete", req.nextUrl.origin);
+  if (txRef) dest.searchParams.set("tx_ref", txRef);
+  if (status) dest.searchParams.set("status", status);
+  return NextResponse.redirect(dest, 302);
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("signature");
