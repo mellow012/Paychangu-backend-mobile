@@ -13,13 +13,15 @@ export const dynamic = "force-dynamic";
 export default async function CheckoutCompletePage({
   searchParams,
 }: {
-  searchParams: { tx_ref?: string; status?: string };
+  searchParams: Promise<{ tx_ref?: string; status?: string }>;
 }) {
+  // Next 15/16: searchParams is a Promise and must be awaited
+  const sp = await searchParams;
   let state: "success" | "pending" | "failed" = "pending";
   let note = "";
   let tradeId: string | null = null;
 
-  const txRef = searchParams.tx_ref;
+  const txRef = sp.tx_ref;
 
   if (!txRef) {
     note = "No payment reference was returned.";
