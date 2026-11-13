@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
       body: JSON.stringify({ email, password }),
     });
     if (res.ok) {
-      window.location.href = "/admin/disputes";
+      window.location.href = "/admin/overview";
     } else {
       setError((await res.json().catch(() => ({}))).error ?? "Login failed");
       setBusy(false);
@@ -25,27 +25,33 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", padding: 24, maxWidth: 360, margin: "80px auto" }}>
-      <h1>Moderator login</h1>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={{ padding: 10, width: "100%", marginBottom: 10, boxSizing: "border-box" }}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        style={{ padding: 10, width: "100%", marginBottom: 10, boxSizing: "border-box" }}
-      />
-      {error && <p style={{ color: "#c00" }}>{error}</p>}
-      <button onClick={submit} disabled={busy || !email || !password} style={{ padding: "10px 20px" }}>
-        {busy ? "Signing in…" : "Sign in"}
-      </button>
+    <div className="login-wrap">
+      <div className="login-card">
+        <div className="login-logo">🛡️</div>
+        <h1>Escrow console</h1>
+        <p className="muted">Moderator sign-in</p>
+        <input
+          className="input"
+          type="email"
+          placeholder="Email"
+          autoComplete="username"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          className="input"
+          type="password"
+          placeholder="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && email && password && submit()}
+        />
+        {error && <p className="err">{error}</p>}
+        <button className="btn primary" style={{ width: "100%", padding: 12 }} onClick={submit} disabled={busy || !email || !password}>
+          {busy ? "Signing in…" : "Sign in"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Contract, JsonRpcProvider, Wallet } from "ethers";
+import { Contract, JsonRpcProvider, Wallet, formatEther } from "ethers";
 
 /**
  * Server-side Arbiter. The Arbiter private key lives ONLY in a Vercel env var
@@ -37,4 +37,12 @@ export async function resolveOnChain(blockchainTradeId: string, releaseToSeller:
   const receipt = await tx.wait(1);
   if (!receipt || receipt.status !== 1) throw new Error("resolveDispute transaction failed");
   return tx.hash as string;
+}
+
+/** Arbiter wallet address + ETH balance, for the dashboard's low-balance warning. */
+export async function arbiterInfo(): Promise<{ address: string; balanceEth: number }> {
+  const provider = new JsonRpcProvider(env("RPC_URL"));
+  const address = new Wallet(env("ARBITER_PRIVATE_KEY")).address;
+  const wei = await provider.getBalance(address);
+  return { address, balanceEth: Number(formatEther(wei)) };
 }
