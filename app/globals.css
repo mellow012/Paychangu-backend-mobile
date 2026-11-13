@@ -1,0 +1,5 @@
+/* Removes the default 8px white page margin that showed up as a white border */
+html, body { margin: 0; padding: 0; min-height: 100%; }
+body { background: #f4f6f8; }
+@media (prefers-color-scheme: dark) { body { background: #0f1419; } }
+html { color-scheme: light dark; }

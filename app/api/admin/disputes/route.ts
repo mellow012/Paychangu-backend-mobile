@@ -20,6 +20,8 @@ export async function GET() {
         createdAt: dispute.createdAt?.toMillis?.() ?? null,
         resolvedAt: dispute.resolvedAt?.toMillis?.() ?? null,
         aiAnalyzedAt: dispute.aiAnalyzedAt?.toMillis?.() ?? null,
+        buyerSubmittedAt: dispute.buyerSubmittedAt?.toMillis?.() ?? null,
+        sellerSubmittedAt: dispute.sellerSubmittedAt?.toMillis?.() ?? null,
         trade: {
           itemDescription: trade.itemDescription ?? "",
           amount: trade.amount ?? 0,

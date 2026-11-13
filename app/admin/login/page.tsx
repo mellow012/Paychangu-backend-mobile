@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Spinner } from "../ui";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
 
   async function submit() {
     setBusy(true);
@@ -38,18 +40,23 @@ export default function AdminLoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <input
-          className="input"
-          type="password"
-          placeholder="Password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && email && password && submit()}
-        />
+        <div className="pw">
+          <input
+            className="input"
+            type={show ? "text" : "password"}
+            placeholder="Password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && email && password && submit()}
+          />
+          <button type="button" onClick={() => setShow(!show)} aria-label={show ? "Hide password" : "Show password"}>
+            {show ? "Hide" : "Show"}
+          </button>
+        </div>
         {error && <p className="err">{error}</p>}
         <button className="btn primary" style={{ width: "100%", padding: 12 }} onClick={submit} disabled={busy || !email || !password}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? <><Spinner /> Signing in…</> : "Sign in"}
         </button>
       </div>
     </div>

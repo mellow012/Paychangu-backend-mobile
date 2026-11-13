@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Loader, PageSkeleton, Spinner } from "../../ui";
 
 type U = {
   uid: string; name: string; email: string; phone: string; isVerified: boolean; walletAddress: string;
@@ -25,10 +27,11 @@ function ago(ms: number | null): string {
   return `${Math.round(s / 86400)}d ago`;
 }
 
-export default function UsersPage() {
+function UsersInner() {
+  const params = useSearchParams();
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(params.get("q") ?? "");
   const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState("");
@@ -70,7 +73,7 @@ export default function UsersPage() {
   }, [data, q, filter]);
 
   if (error && !data) return <p className="err">{error}</p>;
-  if (!data) return <p className="muted">Loading…</p>;
+  if (!data) return <PageSkeleton />;
 
   const m = data.metrics;
   const maxSignups = Math.max(1, ...data.signupsByDay.map((d) => d.count));
@@ -138,7 +141,7 @@ export default function UsersPage() {
                 <div style={{ wordBreak: "break-all" }}>Wallet: {u.walletAddress || "none yet"}</div>
                 <div className="actions">
                   <button className={`btn ${u.isVerified ? "" : "primary"}`} disabled={busy === u.uid} onClick={() => setVerified(u.uid, !u.isVerified)}>
-                    {u.isVerified ? "Remove verified badge" : "Mark as verified trader"}
+                    {busy === u.uid && <Spinner />}{u.isVerified ? "Remove verified badge" : "Mark as verified trader"}
                   </button>
                 </div>
               </div>
@@ -147,5 +150,13 @@ export default function UsersPage() {
         ))}
       </div>
     </>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={<Loader label="Loading users…" />}>
+      <UsersInner />
+    </Suspense>
   );
 }

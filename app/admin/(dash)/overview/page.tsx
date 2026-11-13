@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { PageSkeleton } from "../../ui";
 
 type Overview = {
   statusCounts: Record<string, number>;
@@ -44,7 +45,7 @@ export default function OverviewPage() {
   }, [load]);
 
   if (error) return <p className="err">{error}</p>;
-  if (!data) return <p className="muted">Loading…</p>;
+  if (!data) return <PageSkeleton />;
 
   const max = Math.max(1, ...Object.values(data.statusCounts));
   const arb = data.arbiter;
