@@ -8,6 +8,7 @@ const TABS = [
   { href: "/admin/overview", label: "Overview", ico: "📊" },
   { href: "/admin/disputes", label: "Disputes", ico: "⚖️" },
   { href: "/admin/users", label: "Users", ico: "👥" },
+  { href: "/admin/verifications", label: "Verify", ico: "🪪" },
 ];
 
 export default function AdminHeader({ email }: { email: string }) {
