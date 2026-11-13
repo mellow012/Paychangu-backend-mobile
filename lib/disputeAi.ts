@@ -84,19 +84,39 @@ export async function analyzeDispute(input: DisputeInput): Promise<AiProposal> {
     }
   }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_RULES }] },
-        contents: [{ role: "user", parts }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
-      }),
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_RULES }] },
+    contents: [{ role: "user", parts }],
+    generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+  });
+
+  // Gemini returns 503 "high demand" in busy spells. Retry a few times, then fall back
+  // to a second model before giving up.
+  const fallback = process.env.GEMINI_FALLBACK_MODEL?.trim() || "gemini-2.5-flash-lite";
+  const models = fallback && fallback !== model ? [model, fallback] : [model];
+  const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+  const DELAYS_MS = [1500, 4000];
+
+  let res: Response | null = null;
+  let lastStatus = 0;
+  outer: for (const m of models) {
+    for (let attempt = 0; attempt <= DELAYS_MS.length; attempt++) {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+        { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body }
+      );
+      if (res.ok) break outer;
+      lastStatus = res.status;
+      console.warn(`Gemini ${m} attempt ${attempt + 1} failed: ${res.status} ${(await res.text()).slice(0, 200)}`);
+      if (!RETRYABLE.has(res.status)) {
+        throw new Error(`Gemini error ${res.status}. Check GEMINI_API_KEY and the model name.`);
+      }
+      if (attempt < DELAYS_MS.length) await new Promise((r) => setTimeout(r, DELAYS_MS[attempt]));
     }
-  );
-  if (!res.ok) throw new Error(`Gemini error ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  }
+  if (!res || !res.ok) {
+    throw new Error(`Gemini is busy right now (${lastStatus}). I retried and tried the backup model. Try again in a minute.`);
+  }
 
   const data = await res.json();
   const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
