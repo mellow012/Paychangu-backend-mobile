@@ -40,9 +40,6 @@ export default function HomePage() {
       <div className="wrap">
         <div className="top">
           <div className="logo"><span>🛡️</span> Escrow P2P</div>
-          <nav className="top-nav" aria-label="Main navigation">
-            <a href="/admin/login" className="nav-link">Moderator Login</a>
-          </nav>
         </div>
 
         <section className="hero">
