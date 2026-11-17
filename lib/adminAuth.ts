@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { adminAuth } from "@/lib/firebaseAdmin";
 
 /**
  * Minimal admin login for the moderator console.
@@ -62,8 +63,38 @@ export const sessionCookieOptions = {
   maxAge: MAX_AGE_SECONDS,
 };
 
-/** Returns the admin's email, or null when not signed in. Use in pages and routes. */
+/**
+ * In-app moderators: the Android app sends the signed-in user's Firebase ID token
+ * as "Authorization: Bearer <token>". It is accepted only if the token is valid AND
+ * the account's verified email is listed in MODERATOR_EMAILS (comma-separated, set
+ * in Vercel). The list lives on the server, so a user can't make themselves a moderator.
+ */
+async function moderatorFromBearer(): Promise<string | null> {
+  const allowed = (process.env.MODERATOR_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowed.length === 0) return null;
+
+  const header = (await headers()).get("authorization") ?? "";
+  if (!header.startsWith("Bearer ")) return null;
+  try {
+    const decoded = await adminAuth().verifyIdToken(header.slice(7));
+    const email = decoded.email?.toLowerCase();
+    if (email && decoded.email_verified && allowed.includes(email)) return email;
+  } catch {
+    // invalid or expired token
+  }
+  return null;
+}
+
+/**
+ * Returns the moderator's email, or null when not signed in. Accepts either the web
+ * console cookie or an in-app Firebase token. Use in every admin page and route.
+ */
 export async function currentAdmin(): Promise<string | null> {
   const jar = await cookies();
-  return verifySessionToken(jar.get(ADMIN_COOKIE)?.value);
+  const fromCookie = verifySessionToken(jar.get(ADMIN_COOKIE)?.value);
+  if (fromCookie) return fromCookie;
+  return moderatorFromBearer();
 }
