@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies, headers } from "next/headers";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 
 /**
  * Minimal admin login for the moderator console.
@@ -98,3 +98,19 @@ export async function currentAdmin(): Promise<string | null> {
   if (fromCookie) return fromCookie;
   return moderatorFromBearer();
 }
+
+/**
+ * True when the moderator is one of the users involved (their account email matches).
+ * Used to stop people deciding their own disputes or verifying themselves.
+ * For demos where one person owns every test account, set ALLOW_SELF_MODERATION=1 in Vercel.
+ */
+export async function isPartyTo(moderatorEmail: string, uids: string[]): Promise<boolean> {
+  if (process.env.ALLOW_SELF_MODERATION === "1") return false;
+  const db = adminDb();
+  const docs = await Promise.all(uids.filter(Boolean).map((u) => db.collection("users").doc(u).get()));
+  const me = moderatorEmail.trim().toLowerCase();
+  return docs.some((d) => String(d.get("email") ?? "").trim().toLowerCase() === me);
+}
+
+export const SELF_MODERATION_ERROR =
+  "You are one of the people involved, so another moderator has to decide this.";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { randomUUID } from "crypto";
-import { currentAdmin } from "@/lib/adminAuth";
+import { currentAdmin, isPartyTo, SELF_MODERATION_ERROR } from "@/lib/adminAuth";
 import { adminDb, Timestamp } from "@/lib/firebaseAdmin";
 import { CHAIN_STATUS, chainStatusOf, resolveOnChain } from "@/lib/arbiter";
 
@@ -31,6 +31,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tra
   if (!dSnap.exists || !tSnap.exists) return NextResponse.json({ error: "Dispute not found" }, { status: 404 });
   const dispute = dSnap.data()!;
   const trade = tSnap.data()!;
+  if (await isPartyTo(admin, [trade.buyerUid, trade.sellerUid])) {
+    return NextResponse.json({ error: SELF_MODERATION_ERROR }, { status: 403 });
+  }
   if (dispute.status !== "open" || trade.status !== "DISPUTED") {
     return NextResponse.json({ error: "This dispute is not open" }, { status: 409 });
   }
